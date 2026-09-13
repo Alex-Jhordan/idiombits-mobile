@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'core/database/schemas/local_phrase.dart';
+import 'features/phrases/data/models/local_phrase.dart';
 
 late Isar isarInstance;
 

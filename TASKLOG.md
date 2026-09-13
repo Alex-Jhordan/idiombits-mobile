@@ -159,7 +159,8 @@
     * Resolve application directory using `getApplicationDocumentsDirectory()`.
     * Open Isar instance passing `LocalPhraseSchema`.
 
-- [ ] **Task 4.2: Local Models and Isar Adapters**
+- [X] **Task 4.2: Local Models and Isar Adapters**
+  * Create environment configuration in `lib/core/config/env_config.dart` for base API URL management (emulator vs physical device).
   * Create local entity in `lib/features/phrases/data/models/local_phrase.dart` annotated with `@Collection()`:
     * Define fields: `id` (Isar auto-increment), `ulid` (indexed, unique string for Laravel backend matching), `originalText`, `idiomaticTranslation` (nullable), `sourceLanguage`, `status` (mapped from `PhraseStatus` enum), `payloadData` (nullable string for JSON variations), `isSynced` (bool, default `false`), and `updatedAt`.
   * Compile local schema using Dart build tool:
