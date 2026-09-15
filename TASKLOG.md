@@ -172,15 +172,21 @@
 
 ## Phase 5: Multimodal Capture and Flutter UI
 
-- [ ] **Task 5.1: State Management with BLoC for Capture**
+- [X] **Task 5.1: State Management with BLoC for Capture**
+  * Create status enum in `lib/features/phrases/domain/enums/phrase_status.dart`:
+    * captured, queued, inProgress, learned, and reLearning matching Laravel's PhraseStatus.
   * Define events in `lib/features/phrases/presentation/bloc/phrase_event.dart`:
-    * `CaptureTextSubmitted`, `CaptureAudioRecorded`, `CaptureImageCropped`, and `FetchActivePhrases`.
+    * `CaptureTextSubmitted`, `CaptureAudioRecorded`, `CaptureImageCropped`, and `FetchActivePhrases` (strictly requiring `sourceLanguage`).
   * Define states in `lib/features/phrases/presentation/bloc/phrase_state.dart`:
     * `PhraseInitial`, `PhraseLoading`, `PhraseSavedLocal`, `PhraseActiveLoaded`, and `PhraseSyncError`.
+  * Update repository in `lib/features/phrases/data/repositories/phrase_repository.dart`:
+    * Add `storeRemotePhrase()` targeting `POST /v1/phrases` to handle background sync.
+    * Accept HTTP status codes `200`, `201`, and `202` to validate background processing responses, updating local Isar records (isSynced = true).
+    * Send original_text (matching Laravel's payload structure) and handle exceptions using developer.log without breaking local-first persistence.
   * Implement `lib/features/phrases/presentation/bloc/phrase_bloc.dart`:
     * Generate unique local `ULID` using the `ulid` package.
     * Instantly persist capture to Isar with `isSynced = false` for immediate UI response.
-    * Trigger background HTTP POST to `/api/v1/phrases/store` passing local `ulid`, `raw_text`, and medium details.
+    * Trigger background HTTP POST to `/api/v1/phrases` passing local `ulid`, `original_text`, `source_language` and medium details without hardcoded fallbacks.
 
 - [ ] **Task 5.2: Active Window UI and Capture FAB**
   * Configure `lib/features/phrases/presentation/pages/home_page.dart`:

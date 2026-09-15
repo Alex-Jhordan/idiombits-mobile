@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:isar/isar.dart';
 import '../../../../core/network/api_client.dart';
+import '../../domain/enums/phrase_status.dart';
 import '../models/local_phrase.dart';
 
 class PhraseRepository {
@@ -15,7 +17,7 @@ class PhraseRepository {
   Future<List<LocalPhrase>> getActivePhrasesLocal() async {
     return await isar.localPhrases
         .filter()
-        .statusEqualTo('in_progress')
+        .statusEqualTo(PhraseStatus.inProgress.value)
         .findAll();
   }
 
@@ -56,8 +58,11 @@ class PhraseRepository {
         await isar.writeTxn(() async {
           for (var local in unsynced) {
             if (statuses.containsKey(local.ulid)) {
+              final statusString = statuses[local.ulid].toString();
+              final validatedStatus = PhraseStatus.fromString(statusString);
+
               local.isSynced = true;
-              local.status = statuses[local.ulid].toString();
+              local.status = validatedStatus.value;
               await isar.localPhrases.putByUlid(local);
             }
           }
@@ -65,6 +70,50 @@ class PhraseRepository {
       }
     } else {
       throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    }
+  }
+
+  Future<void> storeRemotePhrase({
+    required String ulid,
+    required String rawText,
+    required String sourceLanguage,
+    String? tag,
+    required String medium,
+  }) async {
+    try {
+      final response = await apiClient.post(
+        '/v1/phrases',
+        body: {
+          'ulid': ulid,
+          'original_text': rawText,
+          'source_language': sourceLanguage,
+          'tag': tag,
+          'medium': medium,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201 || response.statusCode == 202) {
+        final local = await isar.localPhrases.getByUlid(ulid);
+        if (local != null) {
+          await isar.writeTxn(() async {
+            local.isSynced = true;
+            await isar.localPhrases.putByUlid(local);
+          });
+        }
+      } else {
+        developer.log(
+          'Server error syncing phrase $ulid: ${response.statusCode} - ${response.body}',
+          name: 'PhraseRepository.storeRemotePhrase',
+          error: response.statusCode,
+        );
+      }
+    } catch (e, stackTrace) {
+      developer.log(
+        'Network or parsing exception syncing phrase $ulid',
+        name: 'PhraseRepository.storeRemotePhrase',
+        error: e,
+        stackTrace: stackTrace,
+      );
     }
   }
 }
